@@ -11,7 +11,12 @@
 #This would be in form of DRB1_1 and DRB1_2
 #Check HLAtoools::HLAgazeteer$nuc to see valid HLA loci
 
-codon_associationATF <- function(rawData) {
+codon_associationATF <- function(population_data) {
+
+  df_name <- deparse(substitute(population_data))
+
+  print(df_name)
+
   # Pre-compute constants outside loops
   codon_list <- list(
     "A" = A_Codons,
@@ -31,50 +36,49 @@ codon_associationATF <- function(rawData) {
   names(full_ana) <- valid_loci
   
   # Process each dataset
-  for (i in seq_along(rawData)) {
-    current_data <- rawData[[i]]
-    current_data_name <- names(rawData)[i]
-    
-    # Extract all locus columns at once using vectorized operations
-    odd_cols <- seq(3, ncol(current_data), by = 2)
-    locus_names <- vapply(colnames(current_data)[odd_cols], 
-                          function(x) strsplit(x, "_", fixed = TRUE)[[1]][1], 
-                          character(1))
-    
-    # Validate all loci at once
-    invalid_loci <- !locus_names %in% valid_loci
-    if (any(invalid_loci)) {
-      stop(paste("Invalid loci:", paste(locus_names[invalid_loci], collapse = ", ")))
-    }
-    # Process each locus
-    for (j in seq_along(locus_names)) {
-      locus_name <- locus_names[j]
-      
-      # Check if locus has both cases and controls
-      locus_check <- add_locus_edited(
-        locus = locus_name, 
-        codon = codon_list[[locus_name]], 
-        data = current_data, 
-        phenotype_exist = FALSE
-      )
-      
-      if (!locus_check[[1]]) {
-        warning(paste("Locus", locus_name, "in", current_data_name, 
-                      "does not contain both cases and controls. Skipping."))
-        next
-      }
-      
-      # Initialize locus list if needed
-      if (is.null(full_ana[[locus_name]])) {
-        full_ana[[locus_name]] <- list()
-      }
-      
-      # Process locus data
-      full_ana[[locus_name]][[current_data_name]] <- 
-        process_locus_ATF_edited(locus_check[[2]], locus_name, codon_list[[locus_name]])
-    }
-  }
+  print(names(population_data))
   
+  # Extract all locus columns at once using vectorized operations
+  odd_cols <- seq(3, ncol(population_data), by = 2)
+  locus_names <- vapply(
+    colnames(population_data)[odd_cols], 
+    function(x) strsplit(x, 
+    "_", fixed = TRUE)[[1]][1], 
+    character(1)
+    )
+  
+  # Validate all loci at once
+  invalid_loci <- !locus_names %in% valid_loci
+  if (any(invalid_loci)) {
+    stop(paste("Invalid loci:", paste(locus_names[invalid_loci], collapse = ", ")))
+  }
+  # Process each locus
+  for (j in seq_along(locus_names)) {
+    locus_name <- locus_names[j]
+    
+    # Check if locus has both cases and controls
+    locus_check <- add_locus_edited(
+      locus = locus_name, 
+      codon = codon_list[[locus_name]], 
+      data = population_data, 
+      phenotype_exist = FALSE
+    )
+    
+    if (!locus_check[[1]]) {
+      warning(paste("Locus", locus_name,
+                    "does not contain both cases and controls. Skipping."))
+      next
+    }
+    
+    # Initialize locus list if needed
+    if (is.null(full_ana[[locus_name]])) {
+      full_ana[[locus_name]] <- list()
+    }
+    
+    # Process locus data
+    full_ana[[locus_name]] <- 
+      process_locus_ATF_edited(locus_check[[2]], locus_name, codon_list[[locus_name]])
+    }
   # Remove empty elements efficiently
   full_ana[lengths(full_ana) > 0]
 }
