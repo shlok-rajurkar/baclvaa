@@ -11,7 +11,7 @@
 #This would be in form of DRB1_1 and DRB1_2
 #Check HLAtoools::HLAgazeteer$nuc to see valid HLA loci
 
-codon_associationATF <- function(population_data) {
+codon_associationATF <- function(population_data, loci=NA) {
 
   df_name <- deparse(substitute(population_data))
 
@@ -30,13 +30,20 @@ codon_associationATF <- function(population_data) {
   )
   
   valid_loci <- HLAtools::HLAgazetteer$nuc
-  
-  # Pre-allocate list with proper size
   full_ana <- vector("list", length(valid_loci))
   names(full_ana) <- valid_loci
   
-  # Process each dataset
-  print(names(population_data))
+  valid_user_loci = c()
+
+  if (!is.null(loci)) {
+    for (locus in loci) {
+      if (locus %in% valid_loci) {
+        valid_user_loci <- c(valid_user_loci, locus)
+      }
+    }
+  } else {
+    valid_user_loci <- valid_loci
+  }
   
   # Extract all locus columns at once using vectorized operations
   odd_cols <- seq(3, ncol(population_data), by = 2)
@@ -54,6 +61,9 @@ codon_associationATF <- function(population_data) {
   }
   # Process each locus
   for (j in seq_along(locus_names)) {
+    if (!locus_names[j] %in% valid_user_loci) {
+      next
+    }
     locus_name <- locus_names[j]
     
     # Check if locus has both cases and controls
