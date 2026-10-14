@@ -1,3 +1,3 @@
 HLA Codon Association Script
 
-Credit: Chase Peters
+All code in initial commit credited to Chase Peters
